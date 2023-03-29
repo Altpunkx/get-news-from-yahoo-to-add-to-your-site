@@ -1,0 +1,47 @@
+import requests
+from bs4 import BeautifulSoup
+import mysql.connector
+
+# Define the URL of the Yahoo.com page to scrape
+url = "https://www.yahoo.com/news/"
+
+# Send a GET request to the URL and get the HTML content
+response = requests.get(url)
+html_content = response.content
+
+# Parse the HTML content using BeautifulSoup
+soup = BeautifulSoup(html_content, "html.parser")
+
+# Find all the news article elements on the page
+articles = soup.find_all("article")
+
+# Set up a connection to your MySQL database
+db = mysql.connector.connect(
+  host="localhost",
+  user="yourusername",
+  password="yourpassword",
+  database="yourdatabase"
+)
+
+# Create a cursor object to execute SQL queries
+cursor = db.cursor()
+
+# Loop through the articles and extract the relevant data
+for article in articles:
+    # Get the title of the article
+    title = article.find("h4").text
+    
+    # Get the summary of the article
+    summary = article.find("p").text
+    
+    # Get the link to the article
+    link = article.find("a")["href"]
+    
+    # Add the data to your site's database
+    sql = "INSERT INTO news (title, summary, link) VALUES (%s, %s, %s)"
+    val = (title, summary, link)
+    cursor.execute(sql, val)
+    db.commit()
+
+# Close the database connection
+db.close()
